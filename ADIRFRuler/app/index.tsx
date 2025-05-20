@@ -42,13 +42,15 @@ export default function Index() {
         {showProjectActions && (
             <View style={{ width: 1, height: "100%", backgroundColor: "#ccc", marginHorizontal: 10 }} /> 
         )}
-        
+
+        {showProjectActions && (
         <View style={{ marginLeft: 10 }}>
           <Button title="Configure Topic Parameters" onPress={() => router.push("/pages/TopicSetup")} />
         </View>
-
+        )} 
+        {showProjectActions && (
         <View style={{ width: 1, height: "100%", backgroundColor: "#ccc", marginHorizontal: 10 }} />
-
+        )} 
         <View style={{ marginLeft: 10 }}>
           <Button title="Documentation" onPress={() => alert("Opening Documentation...")} />
         </View>
