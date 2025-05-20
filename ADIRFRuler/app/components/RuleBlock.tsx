@@ -54,11 +54,13 @@ export default function RuleBlock({
 
 const styles = StyleSheet.create({
   ruleBlock: {
-    backgroundColor: "#222",
+    backgroundColor: "transparent",
     borderRadius: 10,
     padding: 15,
     marginVertical: 10,
     width: "90%",
+    borderWidth: 1,           
+    borderColor: "black",
   },
   headerRow: {
     flexDirection: "row",
@@ -67,7 +69,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   ruleLabel: {
-    color: "white",
+    color: "black",
     fontSize: 16,
   },
   removeButton: {
@@ -77,14 +79,14 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   removeButtonText: {
-    color: "white",
+    color: "black",
     fontWeight: "bold",
     fontSize: 16,
     lineHeight: 16,
   },
   picker: {
-    color: "white",
-    backgroundColor: "#333",
+    color: "black",
+    backgroundColor: "transparent",
     marginBottom: 10,
   },
 });

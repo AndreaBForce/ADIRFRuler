@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { View, Text, Button, ScrollView, StyleSheet } from "react-native";
 import RuleBlock from "../components/RuleBlock";
+import ConditionalBlock from "./ConditionalBlock";
 
 const topics = [
   { name: "/cmd_vel", color: "#f87171" },
@@ -12,6 +13,14 @@ const topics = [
   { name: "/joint_state", color: "#fb7185" },
   { name: "/scan", color: "#facc15" },
   { name: "/tf", color: "#4ade80" },
+];
+
+const topicProperties = [
+  "pose_x",
+  "pose_y",
+  "pose_z",
+  "velocity",
+  "acceleration",
 ];
 
 const tierLabels = [
@@ -28,8 +37,101 @@ type Rule = {
   status: string;
 };
 
+type Condition = {
+  topic: string;
+  property: string;
+  operator: string;
+  value: string;
+  logic?: string; 
+};
+
+type FrequencySetting = {
+  topic: string;
+  tier: string;
+};
+
+type ConditionalBlock = {
+  conditions: Condition[];
+  frequencies: FrequencySetting[];
+};
+
 export default function ProjectView() {
   const [rules, setRules] = useState<Rule[]>([]);
+
+  const [conditionalBlocks, setConditionalBlocks] = useState<ConditionalBlock[]>([]);
+
+  const addConditionalBlock = () => {
+    setConditionalBlocks([
+      ...conditionalBlocks,
+      {
+        conditions: [
+          { topic: "", property: "", operator: ">", value: "", logic: "" },
+        ],
+        frequencies: [],
+      },
+    ]);
+  };
+
+  const removeConditionalBlock = (index: number) => {
+    setConditionalBlocks(conditionalBlocks.filter((_, i) => i !== index));
+  };
+
+  const updateCondition = (blockIndex: number, condIndex: number, field: keyof Condition, value: string) => {
+    const updatedBlocks = [...conditionalBlocks];
+    updatedBlocks[blockIndex].conditions[condIndex][field] = value;
+    setConditionalBlocks(updatedBlocks);
+  };
+  
+  const updateFrequency = (blockIndex: number, freqIndex: number, field: keyof FrequencySetting, value: string) => {
+    const updatedBlocks = [...conditionalBlocks];
+    updatedBlocks[blockIndex].frequencies[freqIndex][field] = value;
+    setConditionalBlocks(updatedBlocks);
+  };
+
+  // Add condition inside a specific conditional block
+  const addConditionToBlock = (blockIndex: number) => {
+    const updatedBlocks = [...conditionalBlocks];
+    updatedBlocks[blockIndex].conditions.push({
+      topic: "",
+      property: "",
+      operator: ">",
+      value: "",
+      logic: updatedBlocks[blockIndex].conditions.length > 0 ? "AND" : "",
+    });
+    setConditionalBlocks(updatedBlocks);
+  };
+
+  // Remove condition from a specific conditional block
+  const removeConditionFromBlock = (blockIndex: number, condIndex: number) => {
+    const updatedBlocks = [...conditionalBlocks];
+    if (updatedBlocks[blockIndex].conditions.length > 1) {
+      updatedBlocks[blockIndex].conditions.splice(condIndex, 1);
+
+      // Reset logic of first condition
+      if (updatedBlocks[blockIndex].conditions.length > 0) {
+        updatedBlocks[blockIndex].conditions[0].logic = "";
+      }
+
+      setConditionalBlocks(updatedBlocks);
+    }
+  };
+
+  // Add frequency setting inside a specific conditional block
+  const addFrequencyToBlock = (blockIndex: number) => {
+    const updatedBlocks = [...conditionalBlocks];
+    updatedBlocks[blockIndex].frequencies.push({
+      topic: "",
+      tier: "",
+    });
+    setConditionalBlocks(updatedBlocks);
+  };
+
+  // Remove frequency setting from a specific conditional block
+  const removeFrequencyFromBlock = (blockIndex: number, freqIndex: number) => {
+    const updatedBlocks = [...conditionalBlocks];
+    updatedBlocks[blockIndex].frequencies.splice(freqIndex, 1);
+    setConditionalBlocks(updatedBlocks);
+  };
 
   const addGlobalRule = () => {
     setRules([...rules, { topic: "", status: "" }]);
@@ -48,7 +150,21 @@ export default function ProjectView() {
     return topics.filter((t) => !usedTopics.includes(t.name));
   };
 
+  const clearProject = () => {
+    setRules([]);
+    setConditionalBlocks([]);
+  };
+
   const allTopicsUsed = rules.length >= topics.length;
+
+  const downloadProject = () => {
+    const projectData = {
+      rules,
+      conditionalBlocks,
+    };
+  
+    console.log("Project JSON:", JSON.stringify(projectData, null, 2));
+  };
 
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
@@ -59,7 +175,10 @@ export default function ProjectView() {
             <Button title="Add Global Default Rule" onPress={addGlobalRule} disabled={allTopicsUsed} />
           </View>
           <View style={styles.buttonWrapper}>
-            <Button title="Add Conditional Block Rule" onPress={addGlobalRule} />
+            <Button title="Add Conditional Block Rule" onPress={addConditionalBlock} />
+          </View>
+          <View style={styles.buttonWrapper}>
+            <Button title="Clear all" onPress={clearProject} />
           </View>
         </View>
 
@@ -67,10 +186,7 @@ export default function ProjectView() {
 
         <View style={styles.group}>
           <View style={styles.buttonWrapper}>
-            <Button title="Optimize Rules" onPress={addGlobalRule} />
-          </View>
-          <View style={styles.buttonWrapper}>
-            <Button title="Download Project" onPress={addGlobalRule} />
+            <Button title="Download Project" onPress={downloadProject} />
           </View>
         </View>
       </View>
@@ -92,6 +208,24 @@ export default function ProjectView() {
             }}
           />
         ))}
+
+        {conditionalBlocks.map((block, i) => (
+          <ConditionalBlock
+            key={i}
+            topics={topics}
+            tierLabels={tierLabels}
+            topicProperties={topicProperties}
+            conditions={block.conditions}
+            frequencies={block.frequencies}
+            onRemove={() => removeConditionalBlock(i)}
+            updateCondition={(condIndex, field, value) => updateCondition(i, condIndex, field, value)}
+            updateFrequency={(freqIndex, field, value) => updateFrequency(i, freqIndex, field, value)}
+            addCondition={() => addConditionToBlock(i)}
+            removeCondition={(condIndex) => removeConditionFromBlock(i, condIndex)}
+            addFrequency={() => addFrequencyToBlock(i)}
+            removeFrequency={(freqIndex) => removeFrequencyFromBlock(i, freqIndex)}
+          />
+        ))}
       </View>
     </ScrollView>
   );
@@ -109,16 +243,18 @@ const styles = StyleSheet.create({
   projectBox: {
     width: "100%",
     minHeight: 400,
-    backgroundColor: "black",
+    borderWidth: 1,           
+    borderColor: "black",
     borderRadius: 10,
     marginBottom: 20,
     marginTop: 20,
     justifyContent: "flex-start",
     alignItems: "center",
     padding: 20,
+    backgroundColor: "transparent", 
   },
   projectText: {
-    color: "white",
+    color: "black",
     fontSize: 16,
     marginBottom: 10,
   },
