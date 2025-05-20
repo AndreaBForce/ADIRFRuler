@@ -88,7 +88,6 @@ export default function ProjectView() {
     setConditionalBlocks(updatedBlocks);
   };
 
-  // Add condition inside a specific conditional block
   const addConditionToBlock = (blockIndex: number) => {
     const updatedBlocks = [...conditionalBlocks];
     updatedBlocks[blockIndex].conditions.push({
@@ -101,13 +100,12 @@ export default function ProjectView() {
     setConditionalBlocks(updatedBlocks);
   };
 
-  // Remove condition from a specific conditional block
+
   const removeConditionFromBlock = (blockIndex: number, condIndex: number) => {
     const updatedBlocks = [...conditionalBlocks];
     if (updatedBlocks[blockIndex].conditions.length > 1) {
       updatedBlocks[blockIndex].conditions.splice(condIndex, 1);
 
-      // Reset logic of first condition
       if (updatedBlocks[blockIndex].conditions.length > 0) {
         updatedBlocks[blockIndex].conditions[0].logic = "";
       }
@@ -116,7 +114,6 @@ export default function ProjectView() {
     }
   };
 
-  // Add frequency setting inside a specific conditional block
   const addFrequencyToBlock = (blockIndex: number) => {
     const updatedBlocks = [...conditionalBlocks];
     updatedBlocks[blockIndex].frequencies.push({
@@ -126,7 +123,6 @@ export default function ProjectView() {
     setConditionalBlocks(updatedBlocks);
   };
 
-  // Remove frequency setting from a specific conditional block
   const removeFrequencyFromBlock = (blockIndex: number, freqIndex: number) => {
     const updatedBlocks = [...conditionalBlocks];
     updatedBlocks[blockIndex].frequencies.splice(freqIndex, 1);
@@ -157,14 +153,38 @@ export default function ProjectView() {
 
   const allTopicsUsed = rules.length >= topics.length;
 
-  const downloadProject = () => {
-    const projectData = {
-      rules,
-      conditionalBlocks,
-    };
+  const downloadProject = async (projectData: { rules: Rule[]; conditionalBlocks: ConditionalBlock[] }) => {
+    try {
+      const response = await fetch("http://127.0.0.1:5000/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(projectData),
+      });
   
-    console.log("Project JSON:", JSON.stringify(projectData, null, 2));
+      if (!response.ok) {
+        throw new Error("Failed to generate DSL file");
+      }
+  
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "project.dsl"; 
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+  
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Download failed:", error);
+      alert("Failed to download the DSL file.");
+    }
   };
+  
+
 
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
@@ -186,7 +206,10 @@ export default function ProjectView() {
 
         <View style={styles.group}>
           <View style={styles.buttonWrapper}>
-            <Button title="Download Project" onPress={downloadProject} />
+          <Button
+            title="Download Project"
+            onPress={() => downloadProject({ rules, conditionalBlocks })}
+          />
           </View>
         </View>
       </View>
