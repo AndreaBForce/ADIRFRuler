@@ -40,6 +40,8 @@ export default function TopicSetup() {
     }, {} as Record<string, { messageSize: string; tiers: string[] }>)
   );
 
+  const [bandwidth, setBandwidth] = useState("275000");
+
   const handleChange = (
     topic: string,
     field: string,
@@ -61,12 +63,23 @@ export default function TopicSetup() {
 
   const handleSubmit = async () => {
     try {
+      const payload = {
+        bandwidth: parseFloat(bandwidth),
+        ...Object.entries(data).reduce((acc, [topic, values]) => {
+          acc[topic] = {
+            messageSize: parseFloat(values.messageSize),
+            tiers: values.tiers.map((v) => parseFloat(v)),
+          };
+          return acc;
+        }, {} as Record<string, { messageSize: number; tiers: number[] }>),
+      };
+  
       const response = await fetch("http://localhost:5000/save-parameters", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
   
       if (response.ok) {
@@ -128,6 +141,16 @@ export default function TopicSetup() {
           </View>
         ))}
 
+        <View style={styles.bandwidthContainer}>
+          <Text style={styles.bandwidthLabel}>Total Bandwidth (KBps):</Text>
+          <TextInput
+            style={styles.bandwidthInput}
+            keyboardType="numeric"
+            value={bandwidth}
+            onChangeText={setBandwidth}
+          />
+        </View>
+
         <View style={{ marginTop: 30 }}>
           <Button title="Save Topic Parameters" onPress={handleSubmit} />
         </View>
@@ -181,5 +204,23 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     backgroundColor: "#fff",
     paddingHorizontal: 8,
+  },
+  bandwidthContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  bandwidthLabel: {
+    fontWeight: "bold",
+    marginRight: 10,
+  },
+  bandwidthInput: {
+    height: 40,
+    width: 150,
+    borderColor: "#ccc",
+    borderWidth: 1,
+    borderRadius: 5,
+    paddingHorizontal: 10,
+    backgroundColor: "#fff",
   },
 });
