@@ -59,10 +59,29 @@ export default function TopicSetup() {
     }));
   };
 
-  const handleSubmit = () => {
-    console.log("Submitted Data:", data);
-    alert("Rules saved!");
+  const handleSubmit = async () => {
+    try {
+      const response = await fetch("http://localhost:5000/save-parameters", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+  
+      if (response.ok) {
+        alert("Topic Parameters saved correctly!");
+      } else {
+        const errorText = await response.text();
+        console.error("Failed to save:", errorText);
+        alert("Failed to save topic parameters. Please try again.");
+      }
+    } catch (error) {
+      console.error("API Error:", error);
+      alert("An error occurred. Please check your connection or console.");
+    }
   };
+
 
   return (
     <ScrollView horizontal>
@@ -110,7 +129,7 @@ export default function TopicSetup() {
         ))}
 
         <View style={{ marginTop: 30 }}>
-          <Button title="Save Rules" onPress={handleSubmit} />
+          <Button title="Save Topic Parameters" onPress={handleSubmit} />
         </View>
       </ScrollView>
     </ScrollView>

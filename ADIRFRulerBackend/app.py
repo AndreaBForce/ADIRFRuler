@@ -1,43 +1,79 @@
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import tempfile
-import os
-import json
 
 app = Flask(__name__)
 CORS(app)
+
+#Global parameters map
+stored_topic_map = {}
+
 @app.route('/generate', methods=['POST'])
 def generate_dsl():
     data = request.json
 
-    dsl_content = f"# DSL Generated File\nRules:\n"
+    dsl_lines = ["begin"]
+
+    dsl_lines.append("    // Default frequencies")
     for rule in data.get("rules", []):
-        dsl_content += f"- Topic: {rule['topic']}, Status: {rule['status']}\n"
+        topic = rule.get("topic", "")
+        freq = rule.get("status", "FREQ_PLACEHOLDER")
+        dsl_lines.append(f"    SetFrequency {topic} {freq}")
 
-    dsl_content += "\nConditional Blocks:\n"
-    for block in data.get("conditionalBlocks", []):
-        dsl_content += " IF:\n"
-        for cond in block.get("conditions", []):
-            dsl_content += f"   - {cond['topic']} {cond['operator']} {cond['value']}\n"
-        dsl_content += " THEN:\n"
+    for i, block in enumerate(data.get("conditionalBlocks", []), start=1):
+        dsl_lines.append(f"\n    // Conditional block {i}")
+
+        conditions = block.get("conditions", [])
+        if conditions:
+            dsl_lines.append("    If(")
+            for j, cond in enumerate(conditions):
+                topic = cond.get("topic", "")
+                operator = cond.get("operator", "")
+                value = cond.get("value", "")
+                line = f"        CheckValue {topic} {operator} {value}"
+                if j < len(conditions) - 1:
+                    line += " AND"
+                dsl_lines.append(line)
+            dsl_lines.append("    ) Then")
+
         for freq in block.get("frequencies", []):
-            dsl_content += f"   - {freq['topic']} set to {freq['tier']}\n"
+            topic = freq.get("topic", "")
+            freq_value = freq.get("tier", "FREQ_PLACEHOLDER")
+            dsl_lines.append(f"        SetFrequency {topic} {freq_value}")
 
+
+    dsl_lines.append("end")
+
+    dsl_text = "\n".join(dsl_lines)
     tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".dsl", mode="w", encoding="utf-8")
-    tmp_file.write(dsl_content)
+    tmp_file.write(dsl_text)
     tmp_file.close()
 
-    return send_file(tmp_file.name, as_attachment=True, download_name="project.dsl", mimetype="text/plain")
+    return send_file(tmp_file.name, as_attachment=True, download_name="generated_rules.dsl", mimetype="text/plain")
+
+@app.route('/save-parameters', methods=['POST'])
+def save_rules():
+    global stored_topic_map
+    raw_data = request.get_json()
+    
+    topic_map = {}
+    for topic, values in raw_data.items():
+        topic_map[topic] = {
+            "messageSize": float(values["messageSize"]),
+            "tiers": [int(t) for t in values["tiers"]]
+        }
+
+    stored_topic_map = topic_map
+    return jsonify({"status": "ok", "message": "Rules saved", "storedTopics": stored_topic_map})
 
 
 @app.route('/', methods=['GET', 'POST', 'OPTIONS'])
 def index():
     if request.method == 'OPTIONS':
-        return '', 200  # Handle preflight
+        return '', 200  
     if request.method == 'POST':
         data = request.get_json()
         print(data)
-        # process the data and return response
         return jsonify({"status": "ok"})
     return jsonify({'message': 'Hello from Flask backend!'})
 

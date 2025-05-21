@@ -207,7 +207,7 @@ export default function ProjectView() {
         <View style={styles.group}>
           <View style={styles.buttonWrapper}>
           <Button
-            title="Download Project"
+            title="Optimize and Download Project"
             onPress={() => downloadProject({ rules, conditionalBlocks })}
           />
           </View>
