@@ -97,8 +97,13 @@ export default function TopicSetup() {
 
 
   return (
-    <ScrollView horizontal>
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView horizontal contentContainerStyle={{ flexGrow: 1 }}>
+        <ScrollView
+          contentContainerStyle={[
+            styles.container,
+            { flexGrow: 1, justifyContent: "center", alignItems: "center" },
+          ]}
+        >
         <View style={styles.headerRow}>
           <View style={styles.headerCell}>
             <Text style={styles.headerText}>Topic</Text>
@@ -163,8 +168,8 @@ const COLUMN_WIDTH = 130;
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
     paddingBottom: 60,
+    minHeight: "100%", // Ensures vertical centering
   },
   headerRow: {
     flexDirection: "row",
