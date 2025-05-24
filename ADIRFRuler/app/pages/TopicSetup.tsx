@@ -169,7 +169,7 @@ const COLUMN_WIDTH = 130;
 const styles = StyleSheet.create({
   container: {
     paddingBottom: 60,
-    minHeight: "100%", // Ensures vertical centering
+    minHeight: "100%",
   },
   headerRow: {
     flexDirection: "row",
